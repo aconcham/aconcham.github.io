@@ -1,0 +1,738 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ayrton Concha · BIM-GIS</title>
+<meta name="description" content="Ayrton Aldair Concha Medina — Ingeniero Civil (CIP 286932), Coordinador BIM-GIS y Desarrollador BIM. Integración BIM-GIS para infraestructura lineal, automatización con Python, C# y Dynamo.">
+<meta property="og:title" content="Ayrton Concha · Ingeniero Civil · Coordinador BIM-GIS">
+<meta property="og:description" content="Integración BIM-GIS para infraestructura, coordinación multidisciplinaria y automatización con Python, C# y Dynamo.">
+<meta property="og:type" content="profile">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%230E1A2B'/%3E%3Ctext x='32' y='42' font-family='monospace' font-size='26' font-weight='700' fill='%2314B8A6' text-anchor='middle'%3EAC%3C/text%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+<style>
+:root {
+  --bg: #F6F8FA;
+  --surface: #FFFFFF;
+  --surface-2: #EEF2F6;
+  --ink: #0E1A2B;
+  --ink-2: #3A4A5E;
+  --ink-3: #66768A;
+  --line: #DCE3EA;
+  --accent: #0F8C7E;
+  --accent-soft: #DDF3EF;
+  --amber: #B7791F;
+  --amber-soft: #FBF0DC;
+  --hero: #0E1A2B;
+  --hero-ink: #F1F5F9;
+  --hero-ink-2: #A9B8C9;
+  --contour: rgba(45, 212, 191, 0.22);
+  --shadow: 0 1px 2px rgba(14, 26, 43, .06), 0 8px 24px -12px rgba(14, 26, 43, .18);
+  --radius: 14px;
+  --mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+  --sans: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0A1320; --surface: #111D2D; --surface-2: #172538; --ink: #E8EEF5; --ink-2: #B4C1D1; --ink-3: #8394A8;
+    --line: #22344B; --accent: #2DD4BF; --accent-soft: rgba(45, 212, 191, .12); --amber: #F2B65A; --amber-soft: rgba(242, 182, 90, .12);
+    --hero: #07101C; --contour: rgba(45, 212, 191, 0.2); --shadow: 0 1px 2px rgba(0,0,0,.4), 0 10px 30px -14px rgba(0,0,0,.6);
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0A1320; --surface: #111D2D; --surface-2: #172538; --ink: #E8EEF5; --ink-2: #B4C1D1; --ink-3: #8394A8;
+  --line: #22344B; --accent: #2DD4BF; --accent-soft: rgba(45, 212, 191, .12); --amber: #F2B65A; --amber-soft: rgba(242, 182, 90, .12);
+  --hero: #07101C; --contour: rgba(45, 212, 191, 0.2); --shadow: 0 1px 2px rgba(0,0,0,.4), 0 10px 30px -14px rgba(0,0,0,.6);
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--sans); font-size: 16px; line-height: 1.6; -webkit-font-smoothing: antialiased; }
+a { color: var(--accent); text-underline-offset: 3px; }
+a:focus-visible, button:focus-visible, summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; border-radius: 6px; }
+.wrap { max-width: 1080px; margin: 0 auto; padding: 0 24px; }
+.mono { font-family: var(--mono); }
+
+/* ---------- Top bar ---------- */
+.topbar { position: sticky; top: 0; z-index: 1000; background: color-mix(in srgb, var(--bg) 86%, transparent); backdrop-filter: saturate(1.4) blur(10px); border-bottom: 1px solid var(--line); }
+.topbar .wrap { display: flex; align-items: center; justify-content: space-between; height: 56px; gap: 16px; }
+.brand { font-family: var(--mono); font-weight: 600; font-size: 14px; color: var(--ink); text-decoration: none; letter-spacing: .02em; white-space: nowrap; }
+.brand span { color: var(--accent); }
+.nav { display: flex; gap: 4px; overflow-x: auto; scrollbar-width: none; }
+.nav::-webkit-scrollbar { display: none; }
+.nav a { font-size: 14px; color: var(--ink-2); text-decoration: none; padding: 6px 10px; border-radius: 8px; white-space: nowrap; }
+.nav a:hover { background: var(--surface-2); color: var(--ink); }
+.theme-btn { flex: none; width: 34px; height: 34px; border-radius: 8px; border: 1px solid var(--line); background: var(--surface); color: var(--ink-2); cursor: pointer; display: grid; place-items: center; }
+.theme-btn svg { width: 16px; height: 16px; }
+
+/* ---------- Hero ---------- */
+.hero { position: relative; background: var(--hero); color: var(--hero-ink); overflow: hidden; }
+.hero canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
+.hero .wrap { position: relative; padding-top: 72px; padding-bottom: 64px; }
+.coords { font-family: var(--mono); font-size: 12.5px; letter-spacing: .08em; color: #5EEAD4; text-transform: uppercase; display: flex; flex-wrap: wrap; gap: 6px 14px; }
+.hero h1 { font-size: clamp(34px, 6vw, 58px); line-height: 1.05; letter-spacing: -.02em; margin: 18px 0 14px; font-weight: 700; max-width: 16ch; }
+.hero .role { font-size: clamp(17px, 2.4vw, 21px); color: var(--hero-ink); margin: 0 0 8px; font-weight: 500; }
+.hero .role b { color: #5EEAD4; font-weight: 600; }
+.hero .creds { color: var(--hero-ink-2); font-size: 15px; margin: 0 0 30px; max-width: 62ch; }
+.actions { display: flex; flex-wrap: wrap; gap: 10px; }
+.btn { display: inline-flex; align-items: center; gap: 8px; font-size: 15px; font-weight: 600; text-decoration: none; padding: 11px 16px; border-radius: 10px; border: 1px solid transparent; cursor: pointer; font-family: inherit; line-height: 1.2; }
+.btn svg { width: 17px; height: 17px; flex: none; }
+.btn-primary { background: #14B8A6; color: #04201C; }
+.btn-primary:hover { background: #2DD4BF; }
+.btn-ghost { background: rgba(255,255,255,.06); color: var(--hero-ink); border-color: rgba(255,255,255,.18); }
+.btn-ghost:hover { background: rgba(255,255,255,.12); }
+
+.stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1px; margin-top: 48px; background: rgba(255,255,255,.12); border: 1px solid rgba(255,255,255,.12); border-radius: var(--radius); overflow: hidden; }
+.stat { background: color-mix(in srgb, var(--hero) 88%, #14B8A6); padding: 18px 20px; }
+.stat b { display: block; font-family: var(--mono); font-size: 28px; font-weight: 600; color: #fff; line-height: 1.1; }
+.stat span { font-size: 13.5px; color: var(--hero-ink-2); line-height: 1.4; display: block; margin-top: 6px; }
+
+/* ---------- Sections ---------- */
+section { padding: 72px 0 0; scroll-margin-top: 56px; }
+.sec-head { display: flex; align-items: baseline; gap: 14px; margin-bottom: 24px; }
+.sec-head .idx { font-family: var(--mono); font-size: 13px; color: var(--accent); font-weight: 600; }
+.sec-head h2 { font-size: 26px; letter-spacing: -.01em; margin: 0; }
+.lead { font-size: 18px; color: var(--ink-2); max-width: 70ch; margin: 0; }
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); box-shadow: var(--shadow); }
+
+/* Featured project */
+.feature { display: grid; grid-template-columns: 1.15fr 1fr; overflow: hidden; }
+.feature-body { padding: 28px; }
+.feature-tag { display: inline-block; font-family: var(--mono); font-size: 12px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--amber); background: var(--amber-soft); padding: 4px 10px; border-radius: 999px; }
+.feature h3 { font-size: 24px; margin: 14px 0 8px; letter-spacing: -.01em; }
+.feature p { color: var(--ink-2); margin: 0 0 18px; }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; list-style: none; padding: 0; margin: 0; }
+.chips li { font-family: var(--mono); font-size: 12.5px; padding: 4px 9px; border-radius: 6px; background: var(--surface-2); color: var(--ink-2); border: 1px solid var(--line); }
+.feature-links { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 22px; }
+.btn-solid { background: var(--accent); color: #fff; }
+:root[data-theme="dark"] .btn-solid { color: #04201C; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .btn-solid { color: #04201C; } }
+.btn-outline { background: transparent; color: var(--ink); border-color: var(--line); }
+.btn-outline:hover { background: var(--surface-2); }
+.feature-visual { position: relative; background: var(--hero); min-height: 280px; border-left: 1px solid var(--line); }
+.feature-visual svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+
+/* Timeline */
+.timeline { list-style: none; margin: 0; padding: 0; position: relative; }
+.timeline::before { content: ""; position: absolute; left: 7px; top: 8px; bottom: 8px; width: 2px; background: var(--line); }
+.job { position: relative; padding-left: 36px; padding-bottom: 32px; }
+.job:last-child { padding-bottom: 0; }
+.job::before { content: ""; position: absolute; left: 0; top: 7px; width: 16px; height: 16px; border-radius: 50%; background: var(--surface); border: 3px solid var(--accent); }
+.job.now::before { background: var(--accent); box-shadow: 0 0 0 5px var(--accent-soft); }
+.job-head { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 2px 16px; align-items: baseline; }
+.job h3 { font-size: 19px; margin: 0; letter-spacing: -.005em; }
+.job .when { font-family: var(--mono); font-size: 13px; color: var(--ink-3); white-space: nowrap; }
+.job .title { color: var(--accent); font-weight: 600; margin: 2px 0 10px; font-size: 15.5px; }
+.job .title small { color: var(--ink-3); font-weight: 500; font-family: var(--mono); font-size: 12.5px; margin-left: 6px; }
+.job ul { margin: 0; padding-left: 18px; color: var(--ink-2); list-style: disc; }
+.job li { margin: 4px 0; }
+.job li::marker { color: var(--ink-3); }
+.proj { margin-top: 12px; display: flex; flex-wrap: wrap; gap: 6px; }
+.proj span { font-size: 13px; padding: 4px 10px; border-radius: 999px; background: var(--accent-soft); color: var(--ink); border: 1px solid color-mix(in srgb, var(--accent) 25%, transparent); }
+.metric { font-family: var(--mono); font-weight: 600; color: var(--amber); }
+.early { margin-top: 28px; padding: 20px 22px; }
+.early h3 { font-size: 15px; margin: 0 0 12px; font-family: var(--mono); font-weight: 600; color: var(--ink-3); text-transform: uppercase; letter-spacing: .06em; }
+.early ul { list-style: none; padding: 0; margin: 0; display: grid; gap: 10px; }
+.early li { display: grid; grid-template-columns: 1fr auto; gap: 4px 16px; color: var(--ink-2); font-size: 15px; }
+.early li b { color: var(--ink); font-weight: 600; }
+.early .when { font-family: var(--mono); font-size: 13px; color: var(--ink-3); white-space: nowrap; }
+
+/* Map */
+.map-card { display: grid; grid-template-columns: 1fr 320px; overflow: hidden; }
+#map { height: 520px; background: var(--surface-2); }
+.map-list { border-left: 1px solid var(--line); max-height: 520px; overflow-y: auto; padding: 8px; }
+.map-list button { all: unset; box-sizing: border-box; display: grid; grid-template-columns: 12px 1fr; gap: 10px; width: 100%; padding: 10px 12px; border-radius: 10px; cursor: pointer; }
+.map-list button:hover, .map-list button[aria-pressed="true"] { background: var(--surface-2); }
+.map-list button:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+.map-list .dot { width: 12px; height: 12px; border-radius: 50%; margin-top: 5px; }
+.map-list b { display: block; font-size: 14px; line-height: 1.35; color: var(--ink); font-weight: 600; }
+.map-list small { display: block; font-size: 12.5px; color: var(--ink-3); margin-top: 2px; }
+.legend { display: flex; flex-wrap: wrap; gap: 8px 18px; margin-top: 14px; font-size: 13.5px; color: var(--ink-2); }
+.legend span { display: inline-flex; align-items: center; gap: 7px; }
+.legend i { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
+.map-note { font-size: 13px; color: var(--ink-3); margin-top: 8px; }
+.leaflet-container { font-family: var(--sans); }
+.leaflet-popup-content { margin: 12px 14px; font-size: 13.5px; line-height: 1.45; }
+.leaflet-popup-content b { display: block; font-size: 14px; margin-bottom: 2px; }
+
+/* Skills */
+.skills { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+.skill { padding: 22px; }
+.skill h3 { display: flex; align-items: center; gap: 10px; font-size: 16px; margin: 0 0 14px; }
+.skill h3 .ic { width: 32px; height: 32px; border-radius: 9px; display: grid; place-items: center; background: var(--accent-soft); color: var(--accent); flex: none; }
+.skill h3 .ic svg { width: 17px; height: 17px; }
+.skill ul { list-style: none; padding: 0; margin: 0; display: grid; gap: 9px; }
+.skill li { font-size: 14.5px; color: var(--ink-2); padding-left: 14px; position: relative; }
+.skill li::before { content: ""; position: absolute; left: 0; top: .68em; width: 6px; height: 2px; background: var(--accent); }
+.skill li b { color: var(--ink); font-weight: 600; }
+
+/* Education */
+.edu { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+.edu .card { padding: 22px; }
+.edu .when { font-family: var(--mono); font-size: 13px; color: var(--ink-3); }
+.edu h3 { font-size: 17px; margin: 6px 0 4px; line-height: 1.35; }
+.edu p { margin: 0; color: var(--ink-2); font-size: 14.5px; }
+.edu .badge { display: inline-block; margin-top: 10px; font-family: var(--mono); font-size: 12px; font-weight: 600; color: var(--accent); background: var(--accent-soft); padding: 3px 9px; border-radius: 6px; }
+.edu .wide { grid-column: 1 / -1; }
+.mods { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 12px; }
+.mods span { font-size: 12.5px; color: var(--ink-2); border: 1px solid var(--line); border-radius: 6px; padding: 3px 8px; }
+
+/* Certs */
+.certs { display: grid; grid-template-columns: repeat(2, 1fr); gap: 0 32px; }
+.cert { display: grid; grid-template-columns: 1fr auto; gap: 2px 16px; padding: 14px 0; border-bottom: 1px solid var(--line); }
+.cert b { font-weight: 600; font-size: 15px; line-height: 1.4; }
+.cert span { color: var(--ink-3); font-size: 13.5px; grid-column: 1; }
+.cert time { font-family: var(--mono); font-size: 12.5px; color: var(--ink-3); grid-row: 1; grid-column: 2; white-space: nowrap; padding-top: 2px; }
+details.more { margin-top: 18px; }
+details.more summary { cursor: pointer; font-weight: 600; color: var(--accent); list-style: none; display: inline-flex; align-items: center; gap: 8px; padding: 8px 0; }
+details.more summary::-webkit-details-marker { display: none; }
+details.more summary::before { content: "+"; font-family: var(--mono); width: 20px; height: 20px; display: grid; place-items: center; border: 1px solid currentColor; border-radius: 5px; font-size: 14px; line-height: 1; }
+details.more[open] summary::before { content: "−"; }
+
+/* Languages + contact */
+.duo { display: grid; grid-template-columns: 1fr 1.4fr; gap: 16px; }
+.lang { padding: 22px; }
+.lang-row { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid var(--line); }
+.lang-row:last-child { border-bottom: 0; }
+.lang-row b { font-weight: 600; }
+.lang-row span { font-family: var(--mono); font-size: 13px; color: var(--ink-3); }
+.contact { padding: 26px; background: var(--hero); color: var(--hero-ink); border-color: transparent; }
+.contact h3 { font-size: 22px; margin: 0 0 6px; }
+.contact p { color: var(--hero-ink-2); margin: 0 0 18px; }
+.contact .row { display: flex; flex-wrap: wrap; gap: 10px; }
+
+footer { padding: 56px 0 40px; color: var(--ink-3); font-size: 13.5px; }
+footer .wrap { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px; border-top: 1px solid var(--line); padding-top: 20px; }
+
+/* ---------- Responsive ---------- */
+@media (max-width: 900px) {
+  .nav { display: none; }
+  .stats { grid-template-columns: repeat(2, 1fr); }
+  .feature { grid-template-columns: 1fr; }
+  .feature-visual { min-height: 200px; border-left: 0; border-top: 1px solid var(--line); }
+  .map-card { grid-template-columns: 1fr; }
+  #map { height: 380px; }
+  .map-list { border-left: 0; border-top: 1px solid var(--line); max-height: 300px; }
+  .skills { grid-template-columns: 1fr; }
+  .edu { grid-template-columns: 1fr 1fr; }
+  .duo { grid-template-columns: 1fr; }
+}
+@media (max-width: 640px) {
+  .wrap { padding: 0 16px; }
+  .brand-full { display: none; }
+  .hero .wrap { padding-top: 48px; padding-bottom: 44px; }
+  .stat { padding: 14px 14px; }
+  .stat b { font-size: 23px; }
+  section { padding-top: 56px; }
+  .sec-head h2 { font-size: 22px; }
+  .lead { font-size: 16.5px; }
+  .feature-body { padding: 22px; }
+  .edu, .certs { grid-template-columns: 1fr; }
+  .early li { grid-template-columns: 1fr; }
+  .btn { padding: 10px 14px; font-size: 14.5px; }
+}
+
+/* ---------- Print ---------- */
+@media print {
+  @page { margin: 14mm; }
+  :root { --bg: #fff; --surface: #fff; --surface-2: #f3f5f7; --ink: #0E1A2B; --ink-2: #333; --ink-3: #555; --line: #ddd; --hero: #fff; --hero-ink: #0E1A2B; --hero-ink-2: #444; --shadow: none; }
+  body { font-size: 11pt; }
+  .topbar, .hero canvas, .actions, .feature-visual, .feature-links, #mapa, .theme-btn, details.more summary, .contact .row { display: none !important; }
+  details.more > *:not(summary) { display: grid !important; }
+  .hero .wrap { padding: 0 0 12px; }
+  .coords, .hero .role b { color: var(--accent); }
+  .stats { background: none; border: 1px solid #ddd; margin-top: 16px; }
+  .stat { background: #fff; padding: 10px 12px; }
+  .stat b { color: var(--ink); font-size: 18pt; }
+  section { padding-top: 22px; break-inside: auto; }
+  .job, .card, .cert { break-inside: avoid; }
+  .feature { grid-template-columns: 1fr; }
+  a { color: inherit; text-decoration: none; }
+  .contact { border: 1px solid #ddd; }
+}
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <div class="wrap">
+    <a class="brand" href="#inicio">AC<span>/</span><span class="brand-full" style="color:inherit"> BIM-GIS</span></a>
+    <nav class="nav" aria-label="Secciones">
+      <a href="#perfil">Perfil</a>
+      <a href="#experiencia">Experiencia</a>
+      <a href="#mapa">Proyectos</a>
+      <a href="#habilidades">Habilidades</a>
+      <a href="#formacion">Formación</a>
+      <a href="#contacto">Contacto</a>
+    </nav>
+    <button class="theme-btn" id="themeBtn" type="button" aria-label="Cambiar tema claro u oscuro">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>
+    </button>
+  </div>
+</header>
+
+<main>
+<!-- ================= HERO ================= -->
+<div class="hero" id="inicio">
+  <canvas id="contours" aria-hidden="true"></canvas>
+  <div class="wrap">
+    <div class="coords"><span>Lima, Perú</span><span>CIP N° 286932</span></div>
+    <h1>Ayrton Aldair Concha Medina</h1>
+    <p class="role">Ingeniero Civil · <b>Coordinador BIM-GIS</b> · Desarrollador BIM</p>
+    <p class="creds">Integro modelos BIM y datos geoespaciales para proyectos de infraestructura lineal, vial, hidráulica y minera, y desarrollo herramientas propias con Python, C# y Dynamo para que la información técnica fluya mejor.</p>
+    <div class="actions">
+      <a class="btn btn-primary" href="mailto:ayrton.concham@gmail.com">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/></svg>
+        Contactar
+      </a>
+      <a class="btn btn-ghost" href="https://www.linkedin.com/in/ayrton-concha" target="_blank" rel="noopener">
+        <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M4.98 3.5a2.5 2.5 0 1 1 0 5 2.5 2.5 0 0 1 0-5zM3 9.75h4v11H3zm7 0h3.8v1.5h.05c.53-1 1.83-2.05 3.77-2.05 4.03 0 4.78 2.65 4.78 6.1v5.45h-4v-4.83c0-1.15-.02-2.63-1.6-2.63-1.6 0-1.85 1.25-1.85 2.55v4.91h-4z"/></svg>
+        LinkedIn
+      </a>
+      <a class="btn btn-ghost" href="https://romulus-platform.web.app/" target="_blank" rel="noopener">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2 3 7v10l9 5 9-5V7z"/><path d="m3 7 9 5 9-5M12 12v10"/></svg>
+        Demo Open BIM-GIS
+      </a>
+      <button class="btn btn-ghost" type="button" onclick="window.print()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9V3h12v6M6 18H4a1 1 0 0 1-1-1v-6a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v6a1 1 0 0 1-1 1h-2"/><rect x="6" y="14" width="12" height="7"/></svg>
+        Guardar en PDF
+      </button>
+    </div>
+
+    <div class="stats" role="list">
+      <div class="stat" role="listitem"><b>+9 años</b><span>en obra, oficina técnica y proyectos (desde 2016)</span></div>
+      <div class="stat" role="listitem"><b>+4 años</b><span>liderando coordinación BIM y BIM-GIS (desde 2022)</span></div>
+      <div class="stat" role="listitem"><b>12</b><span>proyectos de infraestructura en 8 regiones del Perú</span></div>
+      <div class="stat" role="listitem"><b>≈30–50 %</b><span>menos tiempo en metrados con Dynamo/Python</span></div>
+    </div>
+  </div>
+</div>
+
+<!-- ================= PERFIL ================= -->
+<section id="perfil">
+  <div class="wrap">
+    <div class="sec-head"><span class="idx">01</span><h2>Perfil</h2></div>
+    <p class="lead">Ingeniero Civil colegiado con <strong>Máster Internacional en BIM Management en Ingeniería Civil y GIS</strong> (Zigurat · IL3-Universitat de Barcelona). Me especializo en la interoperabilidad BIM-GIS para infraestructura: coordino equipos multidisciplinarios, audito modelos y su cumplimiento de estándares (ISO 19650, RIBA), gestiono datos geoespaciales y automatizo procesos para reducir retrabajos y tiempos de entrega.</p>
+  </div>
+</section>
+
+<!-- ================= PROYECTO DESTACADO ================= -->
+<section id="destacado" aria-labelledby="destacado-h">
+  <div class="wrap">
+    <div class="sec-head"><span class="idx">02</span><h2 id="destacado-h">Proyecto destacado</h2></div>
+    <article class="card feature">
+      <div class="feature-body">
+        <span class="feature-tag">Desarrollo propio · 2025–2026</span>
+        <h3>Romulus · Plataforma Open BIM-GIS</h3>
+        <p>Plataforma web para auditar y coordinar modelos IFC/Fragments sobre un contexto geoespacial real: los modelos BIM se cargan junto a capas GIS en 3D (Cesium Ion · 3D Tiles), en el navegador y sin licencias propietarias.</p>
+        <ul class="chips" aria-label="Tecnologías">
+          <li>React</li><li>TypeScript</li><li>That Open Engine</li><li>IFC / Fragments</li><li>Cesium Ion · 3D Tiles</li><li>Firebase</li>
+        </ul>
+        <div class="feature-links">
+          <a class="btn btn-solid" href="https://romulus-platform.web.app/" target="_blank" rel="noopener">Abrir demo</a>
+          <a class="btn btn-outline" href="https://www.linkedin.com/in/ayrton-concha" target="_blank" rel="noopener">Ver en LinkedIn</a>
+        </div>
+      </div>
+      <div class="feature-visual" aria-hidden="true">
+        <svg viewBox="0 0 400 300" preserveAspectRatio="xMidYMid slice">
+          <defs>
+            <pattern id="grid" width="20" height="20" patternUnits="userSpaceOnUse"><path d="M20 0H0V20" fill="none" stroke="rgba(94,234,212,.10)" stroke-width="1"/></pattern>
+          </defs>
+          <rect width="400" height="300" fill="url(#grid)"/>
+          <g fill="none" stroke="rgba(94,234,212,.35)" stroke-width="1.2">
+            <path d="M-10 230 C 80 200, 140 250, 220 215 S 360 170, 420 195"/>
+            <path d="M-10 255 C 90 225, 150 275, 230 240 S 360 200, 420 222"/>
+            <path d="M-10 205 C 70 178, 130 222, 210 190 S 350 142, 420 168"/>
+          </g>
+          <g stroke="#2DD4BF" stroke-width="1.5" stroke-linejoin="round">
+            <path d="M150 190 L230 150 L310 190 L230 230 Z" fill="rgba(45,212,191,.10)"/>
+            <path d="M150 190 V120 L230 80 V150 Z" fill="rgba(45,212,191,.18)"/>
+            <path d="M230 80 L310 120 V190 L230 150 Z" fill="rgba(45,212,191,.28)"/>
+            <path d="M150 155 L230 115 L310 155" fill="none" stroke-dasharray="4 4" opacity=".7"/>
+          </g>
+          <g fill="#F2B65A"><circle cx="230" cy="80" r="4"/><circle cx="150" cy="120" r="3"/><circle cx="310" cy="120" r="3"/></g>
+          <text x="22" y="34" fill="rgba(226,232,240,.7)" font-family="IBM Plex Mono, monospace" font-size="11">IFC4 · EPSG:32718</text>
+          <text x="22" y="52" fill="rgba(94,234,212,.8)" font-family="IBM Plex Mono, monospace" font-size="11">3D Tiles ✓  Fragments ✓</text>
+        </svg>
+      </div>
+    </article>
+  </div>
+</section>
+
+<!-- ================= EXPERIENCIA ================= -->
+<section id="experiencia">
+  <div class="wrap">
+    <div class="sec-head"><span class="idx">03</span><h2>Experiencia</h2></div>
+    <ol class="timeline">
+      <li class="job now">
+        <div class="job-head"><h3>UG21 Engineering</h3><span class="when">mar 2026 – actualidad</span></div>
+        <p class="title">Coordinador BIM · Desarrollador BIM</p>
+        <ul>
+          <li>Desarrollo herramientas y rutinas automatizadas con C#, Python y Dynamo para los flujos de modelado y coordinación del proyecto.</li>
+        </ul>
+        <div class="proj"><span>Ampliación y modernización del Aeropuerto Internacional Cap. FAP Guillermo Concha Ibérico (Piura)</span></div>
+      </li>
+
+      <li class="job now">
+        <div class="job-head"><h3>Consultor independiente</h3><span class="when">nov 2025 – actualidad</span></div>
+        <p class="title">Ingeniero Consultor · BIM-GIS y Estructuras</p>
+        <ul>
+          <li>Soluciones de automatización con Python, Dynamo y C# para modelado y gestión de datos.</li>
+          <li>Diseño computacional y generativo aplicado a soluciones de ingeniería.</li>
+        </ul>
+        <div class="proj"><span>Romulus · Plataforma Open BIM-GIS</span></div>
+      </li>
+
+      <li class="job">
+        <div class="job-head"><h3>Amphos 21 <small class="mono" style="color:var(--ink-3);font-weight:500;font-size:12.5px">an RSK company</small></h3><span class="when">ene 2024 – dic 2025</span></div>
+        <p class="title">Coordinador BIM – Consultor en Estructuras <small>feb 2025 – dic 2025</small><br>Especialista BIM <small>ene 2024 – ene 2025</small></p>
+        <ul>
+          <li>Auditoría de modelos y control de cumplimiento de estándares en los entregables BIM del diseño definitivo (<strong>RIBA 4</strong>) de las defensas ribereñas de los ríos Motupe y La Leche.</li>
+          <li>Coordinación BIM del diseño en fase <strong>RIBA 3</strong>, incluido el estudio multicriterio, CAPEX y OPEX, para la protección de riberas del río Huaura.</li>
+          <li>Gestión de la información y soporte BIM para la emisión de entregables de ingeniería y obra de la Línea 4 del Metro de Lima; resolución de interferencias críticas en sistemas de bombeo.</li>
+          <li>Diseño estructural y coordinación de entregables en minería: PAD de la UM San Rafael y tapones de cierre de bocaminas de la UM Orcopampa.</li>
+          <li>Automatización de la extracción de metrados con Dynamo/Python: <span class="metric">≈30–50 %</span> menos tiempo de procesamiento.</li>
+          <li>Coordinación de equipos de estructuras, hidráulica y piping.</li>
+        </ul>
+        <div class="proj">
+          <span>Defensa Ribereña Ríos Motupe y La Leche (Etapa 2)</span>
+          <span>Cuenca Huaura</span>
+          <span>CCM2L · Tramo 3 y Dewatering E4-07, Línea 4 Metro de Lima</span>
+          <span>PAD UM Nueva Acumulación Quenamari – San Rafael</span>
+          <span>Bocaminas PCM UM Orcopampa (CQA)</span>
+        </div>
+      </li>
+
+      <li class="job">
+        <div class="job-head"><h3>Fase BIM</h3><span class="when">ene 2023 – dic 2023</span></div>
+        <p class="title">Coordinador BIM</p>
+        <ul>
+          <li>Coordinación BIM de proyectos hospitalarios de mediana y gran escala, integrando arquitectura, estructuras y MEP.</li>
+          <li>Seguimiento de obra basado en modelos BIM para la trazabilidad del avance entre diseño y ejecución.</li>
+          <li>Mejora de los procesos de modelado y control de calidad del equipo.</li>
+        </ul>
+        <div class="proj">
+          <span>Centros de Salud Limón de Porcuya, San Miguel del Faique y Castilla – Piura (ARCC)</span>
+          <span>Saldo de obra del Hospital Antonio Lorena, Cusco</span>
+        </div>
+      </li>
+
+      <li class="job">
+        <div class="job-head"><h3>Grupo Empresarial Multiservicios On Time</h3><span class="when">ene 2022 – dic 2022</span></div>
+        <p class="title">Coordinador BIM-GIS</p>
+        <ul>
+          <li>Coordinación BIM de expedientes técnicos de infraestructura eléctrica y vial desarrollados en modelos BIM.</li>
+          <li>Control de estándares BIM y requisitos técnicos de los entregables.</li>
+        </ul>
+        <div class="proj">
+          <span>LT 60 kV Pongo de Caynarachi – Yurimaguas y subestaciones (Loreto)</span>
+          <span>Carretera Departamental SM-106, tramo Chazuta – Curiyacu (San Martín)</span>
+        </div>
+      </li>
+
+      <li class="job">
+        <div class="job-head"><h3>Osinergmin</h3><span class="when">jun 2021 – jun 2024</span></div>
+        <p class="title">Supervisor 4 · servicio de supervisión por locación <small>may 2022 – jun 2024</small><br>Practicante profesional <small>jun 2021 – ene 2022</small></p>
+        <ul>
+          <li>Análisis técnico-normativo de expedientes en segunda instancia de los sectores de electricidad y gas natural, para la Secretaría Técnica de los Órganos Resolutivos.</li>
+          <li>Becario del XIX Curso de Extensión Universitaria, especialidad Supervisión Minera (2021).</li>
+        </ul>
+      </li>
+    </ol>
+
+    <div class="card early">
+      <h3>Inicios en obra · 2016–2020</h3>
+      <ul>
+        <li><div><b>Bakar Perú</b> — Asistente de Oficina Técnica: control documental de planos y especificaciones, y seguimiento de avance en campo.</div><span class="when">ago 2019 – dic 2020</span></li>
+        <li><div><b>Caballero Contratistas Generales</b> — Asistente de Construcción: vía San Joaquín de Omaguas, carretera Iquitos–Nauta km 58 (9.4 km, S/ 22.8 M).</div><span class="when">jun 2018 – feb 2019</span></li>
+        <li><div><b>Consorcio Pramur</b> — Asistente del Ingeniero Residente: pavimento rígido y veredas, Gran Mercado Mayorista de Lima.</div><span class="when">dic 2016 – abr 2017</span></li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- ================= MAPA ================= -->
+<section id="mapa">
+  <div class="wrap">
+    <div class="sec-head"><span class="idx">04</span><h2>Proyectos en el territorio</h2></div>
+    <div class="card map-card">
+      <div id="map" role="region" aria-label="Mapa de proyectos en Perú"></div>
+      <div class="map-list" id="mapList" aria-label="Lista de proyectos">
+        <button type="button" aria-pressed="false" data-lat="-5.205" data-lng="-80.616" data-cat="transporte" data-role="Coordinación y desarrollo BIM"><span class="dot" style="background:#0EA5E9"></span><span><b>Aeropuerto Internacional Cap. FAP Guillermo Concha Ibérico</b><small>Piura · UG21 · 2026</small></span></button>
+        <button type="button" aria-pressed="false" data-lat="-12.05" data-lng="-77.09" data-cat="transporte" data-role="Gestión de la información y soporte BIM"><span class="dot" style="background:#0EA5E9"></span><span><b>CCM2L · Tramo 3 y Dewatering E4-07, Línea 4 Metro de Lima</b><small>Lima / Callao · Amphos 21 · 2025</small></span></button>
+        <button type="button" aria-pressed="false" data-lat="-6.35" data-lng="-79.77" data-cat="agua" data-role="Auditoría de modelos BIM · RIBA 4"><span class="dot" style="background:#14B8A6"></span><span><b>Defensa Ribereña Ríos Motupe y La Leche (Etapa 2)</b><small>Lambayeque · Amphos 21 · 2024–2025</small></span></button>
+        <button type="button" aria-pressed="false" data-lat="-11.12" data-lng="-77.2" data-cat="agua" data-role="Coordinación BIM · RIBA 3, CAPEX y OPEX"><span class="dot" style="background:#14B8A6"></span><span><b>Protección de riberas · Cuenca Huaura</b><small>Lima provincias · Amphos 21 · 2025</small></span></button>
+        <button type="button" aria-pressed="false" data-lat="-14.23" data-lng="-70.32" data-cat="mineria" data-role="Diseño estructural y coordinación"><span class="dot" style="background:#D97706"></span><span><b>PAD UM Nueva Acumulación Quenamari – San Rafael</b><small>Puno · Amphos 21 · 2025</small></span></button>
+        <button type="button" aria-pressed="false" data-lat="-15.27" data-lng="-72.34" data-cat="mineria" data-role="Diseño estructural de tapones de cierre"><span class="dot" style="background:#D97706"></span><span><b>Bocaminas PCM · UM Orcopampa (CQA)</b><small>Arequipa · Amphos 21 · 2025</small></span></button>
+        <button type="button" aria-pressed="false" data-lat="-5.5" data-lng="-79.6" data-cat="salud" data-role="Coordinación BIM"><span class="dot" style="background:#E11D48"></span><span><b>Centros de Salud Limón de Porcuya, San Miguel del Faique y Castilla</b><small>Piura · Fase BIM · 2023</small></span></button>
+        <button type="button" aria-pressed="false" data-lat="-13.53" data-lng="-71.97" data-cat="salud" data-role="Coordinación BIM y seguimiento de obra"><span class="dot" style="background:#E11D48"></span><span><b>Saldo de obra Hospital Antonio Lorena</b><small>Cusco · Fase BIM · 2023</small></span></button>
+        <button type="button" aria-pressed="false" data-lat="-6.1" data-lng="-76.2" data-cat="energia" data-role="Coordinación BIM-GIS del expediente"><span class="dot" style="background:#7C3AED"></span><span><b>LT 60 kV Pongo de Caynarachi – Yurimaguas</b><small>Loreto · On Time · 2022</small></span></button>
+        <button type="button" aria-pressed="false" data-lat="-6.57" data-lng="-76.13" data-cat="transporte" data-role="Coordinación BIM-GIS del expediente"><span class="dot" style="background:#0EA5E9"></span><span><b>Carretera Departamental SM-106 Chazuta – Curiyacu</b><small>San Martín · On Time · 2022</small></span></button>
+        <button type="button" aria-pressed="false" data-lat="-4.17" data-lng="-73.55" data-cat="transporte" data-role="Asistente de construcción"><span class="dot" style="background:#0EA5E9"></span><span><b>Vía San Joaquín de Omaguas · Iquitos–Nauta km 58</b><small>Loreto · Caballero Contratistas · 2018</small></span></button>
+        <button type="button" aria-pressed="false" data-lat="-12.04" data-lng="-76.97" data-cat="edif" data-role="Asistente del residente de obra"><span class="dot" style="background:#64748B"></span><span><b>Pavimento rígido · Gran Mercado Mayorista de Lima</b><small>Lima · Consorcio Pramur · 2017</small></span></button>
+      </div>
+    </div>
+    <div class="legend" id="legend"><span><i style="background:#0EA5E9"></i>Transporte</span><span><i style="background:#14B8A6"></i>Hidráulica y defensa ribereña</span><span><i style="background:#D97706"></i>Minería</span><span><i style="background:#E11D48"></i>Salud</span><span><i style="background:#7C3AED"></i>Energía</span><span><i style="background:#64748B"></i>Edificación</span></div>
+    <p class="map-note">Ubicaciones aproximadas, con fines ilustrativos.</p>
+  </div>
+</section>
+
+<!-- ================= HABILIDADES ================= -->
+<section id="habilidades">
+  <div class="wrap">
+    <div class="sec-head"><span class="idx">05</span><h2>Habilidades técnicas</h2></div>
+    <div class="skills">
+      <div class="card skill">
+        <h3><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg></span>Gestión BIM</h3>
+        <ul>
+          <li><b>ISO 19650</b>, RIBA Plan of Work, Plan BIM Perú</li>
+          <li>Federación de modelos y detección de interferencias</li>
+          <li>Auditoría y control de calidad BIM (QA/QC)</li>
+          <li>Entornos comunes de datos: ACC / BIM 360</li>
+          <li>Planificación y simulación 4D: Navisworks, SYNCHRO 4D</li>
+        </ul>
+      </div>
+      <div class="card skill">
+        <h3><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1 6v16l7-4 8 4 7-4V2l-7 4-8-4-7 4z"/><path d="M8 2v16M16 6v16"/></svg></span>Modelado y GIS</h3>
+        <ul>
+          <li><b>Civil 3D</b>, InfraWorks, Revit, Navisworks</li>
+          <li><b>ArcGIS Pro</b>, QGIS, Cesium Ion (3D Tiles)</li>
+          <li>Rhinoceros y Grasshopper</li>
+          <li>Tekla Structures y Plant 3D</li>
+          <li>Análisis estructural: Robot, SAP2000</li>
+        </ul>
+      </div>
+      <div class="card skill">
+        <h3><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m16 18 6-6-6-6M8 6l-6 6 6 6"/></svg></span>Desarrollo y automatización</h3>
+        <ul>
+          <li><b>Python</b>, <b>C#</b>, TypeScript, JavaScript</li>
+          <li>Revit API, That Open Engine (OpenBIM / Fragments), React</li>
+          <li>Dynamo y Grasshopper para automatización BIM-GIS</li>
+          <li>Firebase Functions y Google Sheets API</li>
+          <li>Machine learning con Python</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= FORMACIÓN ================= -->
+<section id="formacion">
+  <div class="wrap">
+    <div class="sec-head"><span class="idx">06</span><h2>Formación</h2></div>
+    <div class="edu">
+      <div class="card wide">
+        <span class="when">nov 2024 – nov 2025</span>
+        <h3>Máster Internacional BIM Management en Ingeniería Civil y GIS</h3>
+        <p>Zigurat Institute of Technology · acreditado por el IL3 – Universitat de Barcelona</p>
+        <span class="badge">60 ECTS · 1 500 h</span>
+        <div class="mods">
+          <span>BIM Management</span><span>Captura y análisis de datos geoespaciales</span><span>Diseño digital de infraestructuras</span><span>Preconstrucción y construcción en BIM</span><span>Operación y mantenimiento</span><span>Trabajo final de máster</span>
+        </div>
+      </div>
+      <div class="card">
+        <span class="when">ago 2026 – actualidad</span>
+        <h3>Maestría en Dirección de la Construcción</h3>
+        <p>Universidad Peruana de Ciencias Aplicadas (UPC)</p>
+      </div>
+      <div class="card">
+        <span class="when">jun 2025 – actualidad</span>
+        <h3>Master BIM Software Developer</h3>
+        <p>That Open Company</p>
+      </div>
+      <div class="card">
+        <span class="when">2021 · colegiado 2022</span>
+        <h3>Ingeniero Civil</h3>
+        <p>Universidad Ricardo Palma · Colegio de Ingenieros del Perú</p>
+        <span class="badge">CIP N° 286932</span>
+      </div>
+    </div>
+
+    <h3 style="font-size:18px;margin:40px 0 4px">Certificaciones destacadas</h3>
+    <div class="certs">
+      <div class="cert"><b>Civil 3D, InfraWorks, Revit y Navisworks 2025</b><span>Autodesk Authorized Academic Partner · Zigurat</span><time>nov 2025</time></div>
+      <div class="cert"><b>SYNCHRO 4D Pro</b><span>Bentley Systems · Zigurat</span><time>nov 2025</time></div>
+      <div class="cert"><b>Automatización BIM con Revit, Dynamo, Python y C#</b><span>AECODE</span><time>nov 2025</time></div>
+      <div class="cert"><b>Especialista en IA aplicada a la Ingeniería y Construcción</b><span>AECODE · CIP Apurímac · 150 h</span><time>jul 2026</time></div>
+      <div class="cert"><b>Dynamo para Autodesk Civil 3D</b><span>GVR Peruvian Engineers · Autodesk ATC</span><time>mar 2025</time></div>
+      <div class="cert"><b>Planificación y Simulación BIM 4D</b><span>AECODE</span><time>feb 2025</time></div>
+      <div class="cert"><b>Modelamiento BIM de Puentes con Revit y Dynamo</b><span>AECODE</span><time>ago 2024</time></div>
+      <div class="cert"><b>Especialista BIM en Modelado y Coordinación de Hospitales</b><span>Escuela de Construcción Digital · Autodesk ATC · 120 h</span><time>set 2025</time></div>
+      <div class="cert"><b>Ingeniería Estructural en Proyectos Metalmecánicos</b><span>Escuela de Estructuras Metálicas · 180 h</span><time>dic 2025</time></div>
+      <div class="cert"><b>Machine Learning con Python</b><span>Universidad Nacional de Ingeniería</span><time>mar 2025</time></div>
+    </div>
+    <details class="more">
+      <summary>Ver todas las certificaciones</summary>
+      <div class="certs">
+        <div class="cert"><b>Especialista en Cimentaciones Superficiales y Profundas</b><span>Pyramid Academy</span><time>abr 2026</time></div>
+        <div class="cert"><b>Diseño de Cimentaciones Superficiales de Equipos Vibratorios</b><span>DIESCON Ingeniería Estructural</span><time>en curso</time></div>
+        <div class="cert"><b>Diseño Estructural de Alcantarillas y Puentes Vehiculares Menores</b><span>DIESCON Ingeniería Estructural</span><time>jun 2025</time></div>
+        <div class="cert"><b>Concreto Armado IV: Muros de Contención</b><span>DIESCON Ingeniería Estructural</span><time>may 2025</time></div>
+        <div class="cert"><b>Programación en Python Básico e Intermedio</b><span>Universidad Nacional de Ingeniería</span><time>2024</time></div>
+        <div class="cert"><b>Especialista BIM en Modelado de Instalaciones en Edificios</b><span>Escuela de Construcción Digital</span><time>ago 2023</time></div>
+        <div class="cert"><b>Modelador BIM (Arquitectura, Estructuras, MEP)</b><span>Cema BIM – Instituto Dozer · Autodesk ATC</span><time>jul 2023</time></div>
+        <div class="cert"><b>Autodesk Revit API, 9.ª edición</b><span>Prometheus Ingenieros</span><time>set 2022</time></div>
+        <div class="cert"><b>Naves Industriales con Tekla Structures</b><span>Especialistas BIM Perú</span><time>jun 2022</time></div>
+        <div class="cert"><b>Automatización BIM en la Construcción + Power BI</b><span>Pro Management Consulting</span><time>mar 2022</time></div>
+        <div class="cert"><b>Parametrización del Cálculo de Estructuras y Modelos BIM</b><span>Construsoft España y Latinoamérica</span><time>ene 2022</time></div>
+        <div class="cert"><b>XIX Curso de Extensión Universitaria · Supervisión Minera</b><span>Osinergmin · ENAP/SERVIR</span><time>2021</time></div>
+        <div class="cert"><b>Robot Structural I y II · Revit I y II</b><span>SemcoCAD · Autodesk ATC</span><time>2020</time></div>
+        <div class="cert"><b>Diseño y Cálculo de Estructuras Metálicas</b><span>EADIC</span><time>ago 2020</time></div>
+        <div class="cert"><b>Ingeniería de Recursos Hídricos con SIG</b><span>Instituto Cersa · 90 h</span><time>jul 2020</time></div>
+        <div class="cert"><b>Scrum Foundation Professional Certificate (SFPC)</b><span>CertiProf</span><time>jun 2020</time></div>
+        <div class="cert"><b>Presupuestos y Análisis de Costos con S10</b><span>Instituto Cersa</span><time>may 2020</time></div>
+        <div class="cert"><b>Especialista en ArcGIS Básico</b><span>MasterGIS</span><time>may 2020</time></div>
+      </div>
+    </details>
+  </div>
+</section>
+
+<!-- ================= IDIOMAS + CONTACTO ================= -->
+<section id="contacto">
+  <div class="wrap">
+    <div class="sec-head"><span class="idx">07</span><h2>Idiomas y contacto</h2></div>
+    <div class="duo">
+      <div class="card lang">
+        <div class="lang-row"><b>Español</b><span>Nativo</span></div>
+        <div class="lang-row"><b>Inglés</b><span>Intermedio</span></div>
+      </div>
+      <div class="card contact">
+        <h3>Conversemos</h3>
+        <p>Referencias laborales disponibles a solicitud.</p>
+        <div class="row">
+          <a class="btn btn-primary" href="mailto:ayrton.concham@gmail.com">ayrton.concham@gmail.com</a>
+          <a class="btn btn-ghost" href="https://www.linkedin.com/in/ayrton-concha" target="_blank" rel="noopener">LinkedIn</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <span>© 2026 Ayrton Aldair Concha Medina</span>
+    <span class="mono">Mapa base © Esri · OpenStreetMap</span>
+  </div>
+</footer>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script>
+(function () {
+  // ---------- Tema ----------
+  var root = document.documentElement;
+  try { var saved = localStorage.getItem("theme"); if (saved) root.setAttribute("data-theme", saved); } catch (e) {}
+  function isDark() {
+    var t = root.getAttribute("data-theme");
+    if (t) return t === "dark";
+    return window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches;
+  }
+  document.getElementById("themeBtn").addEventListener("click", function () {
+    var next = isDark() ? "light" : "dark";
+    root.setAttribute("data-theme", next);
+    try { localStorage.setItem("theme", next); } catch (e) {}
+    if (window.__setTiles) window.__setTiles();
+    drawContours();
+  });
+
+  // ---------- Curvas de nivel en el hero ----------
+  var cv = document.getElementById("contours");
+  function drawContours() {
+    var r = cv.getBoundingClientRect(), dpr = Math.min(window.devicePixelRatio || 1, 2);
+    cv.width = r.width * dpr; cv.height = r.height * dpr;
+    var c = cv.getContext("2d"); c.scale(dpr, dpr);
+    var w = r.width, h = r.height;
+    var peaks = [{ x: w * 0.82, y: h * 0.28, s: 1.0 }, { x: w * 0.62, y: h * 0.78, s: 0.7 }, { x: w * 1.02, y: h * 0.9, s: 0.6 }];
+    function f(x, y) {
+      var v = 0;
+      peaks.forEach(function (p) { var dx = (x - p.x) / (w * 0.32), dy = (y - p.y) / (h * 0.55); v += p.s * Math.exp(-(dx * dx + dy * dy)); });
+      return v + 0.05 * Math.sin(x / 61) * Math.cos(y / 47);
+    }
+    var step = 6, cols = Math.ceil(w / step) + 1, rows = Math.ceil(h / step) + 1, grid = [];
+    for (var j = 0; j < rows; j++) { grid[j] = []; for (var i = 0; i < cols; i++) grid[j][i] = f(i * step, j * step); }
+    var stroke = getComputedStyle(root).getPropertyValue("--contour").trim() || "rgba(45,212,191,.15)";
+    c.lineWidth = 1;
+    for (var k = 1; k <= 14; k++) {
+      var lvl = k * 0.075;
+      c.strokeStyle = stroke;
+      c.globalAlpha = k % 5 === 0 ? 1 : 0.7;
+      c.lineWidth = k % 5 === 0 ? 1.4 : 0.9;
+      c.beginPath();
+      for (j = 0; j < rows - 1; j++) for (i = 0; i < cols - 1; i++) {
+        var a = grid[j][i], b = grid[j][i + 1], d = grid[j + 1][i], e = grid[j + 1][i + 1];
+        var x = i * step, y = j * step, pts = [];
+        function lerp(v1, v2) { return (lvl - v1) / (v2 - v1); }
+        if ((a < lvl) !== (b < lvl)) pts.push([x + step * lerp(a, b), y]);
+        if ((b < lvl) !== (e < lvl)) pts.push([x + step, y + step * lerp(b, e)]);
+        if ((d < lvl) !== (e < lvl)) pts.push([x + step * lerp(d, e), y + step]);
+        if ((a < lvl) !== (d < lvl)) pts.push([x, y + step * lerp(a, d)]);
+        if (pts.length >= 2) { c.moveTo(pts[0][0], pts[0][1]); c.lineTo(pts[1][0], pts[1][1]); }
+        if (pts.length === 4) { c.moveTo(pts[2][0], pts[2][1]); c.lineTo(pts[3][0], pts[3][1]); }
+      }
+      c.stroke();
+    }
+  }
+  var rt; window.addEventListener("resize", function () { clearTimeout(rt); rt = setTimeout(drawContours, 150); });
+  drawContours();
+
+  // ---------- Mapa de proyectos ----------
+  var CATS = { transporte: "#0EA5E9", agua: "#14B8A6", mineria: "#D97706", salud: "#E11D48", energia: "#7C3AED", edif: "#64748B" };
+  var list = document.getElementById("mapList");
+  var btns = [].slice.call(list.querySelectorAll("button"));
+  if (typeof L === "undefined") {
+    document.getElementById("map").innerHTML = '<p style="padding:20px;color:var(--ink-3)">No se pudo cargar el mapa.</p>';
+    return;
+  }
+  var map = L.map("map", { scrollWheelZoom: false }).setView([-9.3, -75.2], 5);
+  map.attributionControl.setPrefix(false);
+  var base, labels;
+  function setTiles() {
+    var dark = isDark();
+    var b = dark ? "World_Dark_Gray_Base" : "World_Light_Gray_Base";
+    var r = dark ? "World_Dark_Gray_Reference" : "World_Light_Gray_Reference";
+    if (base) map.removeLayer(base);
+    if (labels) map.removeLayer(labels);
+    base = L.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/" + b + "/MapServer/tile/{z}/{y}/{x}", {
+      attribution: "Mapa base &copy; Esri, HERE, Garmin, &copy; OpenStreetMap", maxZoom: 16
+    }).addTo(map);
+    labels = L.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/" + r + "/MapServer/tile/{z}/{y}/{x}", { maxZoom: 16, pane: "overlayPane" }).addTo(map);
+  }
+  window.__setTiles = setTiles;
+  setTiles();
+  if (window.matchMedia) {
+    var mq = window.matchMedia("(prefers-color-scheme: dark)");
+    if (mq.addEventListener) mq.addEventListener("change", function () { setTiles(); drawContours(); });
+  }
+  var markers = [];
+  btns.forEach(function (btn) {
+    var ll = [parseFloat(btn.dataset.lat), parseFloat(btn.dataset.lng)];
+    var m = L.circleMarker(ll, { radius: 8, color: "#fff", weight: 2, fillColor: CATS[btn.dataset.cat], fillOpacity: 0.95 }).addTo(map);
+    var pop = document.createElement("div");
+    var b = document.createElement("b"); b.textContent = btn.querySelector("b").textContent; pop.appendChild(b);
+    var role = document.createElement("div"); role.textContent = btn.dataset.role; role.style.color = "#0F8C7E"; role.style.fontWeight = "600"; pop.appendChild(role);
+    pop.appendChild(document.createTextNode(btn.querySelector("small").textContent));
+    m.bindPopup(pop);
+    m.bindTooltip(b.textContent, { direction: "top", offset: [0, -8] });
+    markers.push(m);
+    function select() {
+      btns.forEach(function (el) { el.setAttribute("aria-pressed", "false"); });
+      btn.setAttribute("aria-pressed", "true");
+      btn.scrollIntoView({ block: "nearest" });
+    }
+    m.on("click", select);
+    btn.addEventListener("click", function () { select(); map.flyTo(ll, 8, { duration: 0.8 }); m.openPopup(); });
+  });
+  map.fitBounds(L.featureGroup(markers).getBounds().pad(0.15));
+  map.on("focus", function () { map.scrollWheelZoom.enable(); });
+  map.on("blur", function () { map.scrollWheelZoom.disable(); });
+})();
+</script>
+</body>
+</html>
